@@ -14,7 +14,8 @@ MODで新しくアイテム等を追加したので、タイルセットの既�
 もしくは既にタイル設定されているアイテムを別の既存タイルに差し替えたい。
 
 ### 使い方
-1. 実行ファイルと同じフォルダにある"tilesets"フォルダの中に結合したいタイルセットを入れる。
+1. cdda_tile_parser.bat(以下実行ファイル)と同じフォルダにある"tilesets"フォルダの中に
+   結合したいタイルセット群を入れる。
 2. 同じく"json_only"フォルダの中に追加したいタイル割り当て設定を書いたjsonファイルを入れる。
    Jsonファイルの書き方は後述。
 3. 実行ファイルを起動
@@ -53,7 +54,7 @@ MODで新しくアイテム等を追加したので、タイルセットの既�
 ・内部がフォルダ分けされているタイルセットだとうまく動作しないかもしれません。
 
 ### 連絡先
-GitHubリポジトリ https://github.com/lispcoc/Scratchpad
+GitHubリポジトリ https://github.com/lispcoc/CDDA-Tileset-parser
 Issueに書いてください。
 
 Twitterアカウント https://twitter.com/LISP_COC
