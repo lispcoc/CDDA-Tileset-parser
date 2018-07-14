@@ -1,0 +1,25 @@
+{
+  "tile_info": [
+    {
+      "height": 32,
+      "width": 32
+    }
+  ],
+  "tiles-new": [
+    {
+      "file": "test_tile.png",
+      "tiles": [
+        {
+          "id": "player_female",
+          "fg": 1,
+          "bg": 0
+        },
+        {
+          "id": "player_male",
+          "fg": 2,
+          "bg": 0
+        }
+      ]
+    }
+  ]
+}

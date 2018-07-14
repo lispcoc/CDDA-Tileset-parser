@@ -1,0 +1,5 @@
+# このソフトではtileset.txtは見てないので内容は適当でいいです
+NAME: test
+VIEW: test
+JSON: tile_config.json
+TILESET: test_tile.png

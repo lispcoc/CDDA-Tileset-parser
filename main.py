@@ -63,6 +63,10 @@ class GenericListBox(tk.LabelFrame):
         self.lb.insert(selected + 1, elem)
         self.lb.select_set(selected + 1)
 
+    def get_list(self):
+        newlist = list(self.lb.get(0, tk.END))
+        return newlist
+
     def __init__(self, master, **key):
         tk.LabelFrame.__init__(self, master)
         self.lb = tk.Listbox(self)
@@ -94,175 +98,150 @@ class GenericListBox(tk.LabelFrame):
 # -----------------------------------------------------------------
 
 
-def main():
-    # メインウィンドウ作成
-    root = tk.Tk()
+class FileOrder():
+    def __init__(self, folder, default_order_file):
+        self.order = []
+        self.default_order = []
+        self.folder = folder
+        self.default_order_file = default_order_file
 
-    # メインウィンドウのタイトルを変更
-    root.title("C:DDA Tile parser")
+    def default_order_load(self, file):
+        try:
+            default_order_file = open(file, 'r')
+            self.default_order = json.load(default_order_file)
+        except IOError:
+            print(TILESET_ORDER_FILE + " not found")
 
-    # メインウィンドウを640x480にする
-    root.geometry("800x400")
+        return self.default_order
 
-    # フレーム
-    frame1 = ttk.Frame(root, padding=10)
-    frame1.grid()
+    def load(self):
+        found = []
+        new_order = []
+        if self.folder:
+            for filepath in self.walk_files_with('json', self.folder):
+                found.append(filepath)
+        if self.default_order_file:
+            self.default_order_load(self.default_order_file)
 
-    tk.Label(frame1, text=u"タイルセットオーダー(下のタイルが優先されます)").grid(row=0, column=0)
-    # タイルセットのリストボックス
-    tileset_lb = GenericListBox(frame1, width=50, height=10)
-    tileset_lb.grid(row=1, column=0)
-    tileset_lb_reflesh(tileset_lb.lb)
-
-    # リスト更新ボタン
-    tilesets_reflesh_button = tk.Button(
-        frame1, text="リスト更新(タイルセットはtilesetsフォルダに入れてください)",
-        command=lambda: tileset_lb_reflesh(tileset_lb.lb))
-    tilesets_reflesh_button.grid(row=2, column=0)
-
-    # オーダー保存ボタン
-    tileset_order_save_button = tk.Button(
-        frame1, text="タイルセットオーダーを保存",
-        command=lambda: tileset_order_save(get_list_from_listbox(tileset_lb.lb)))
-    tileset_order_save_button.grid(row=3, column=0)
-
-    tk.Label(frame1, text=u"Json設定ファイル(下のファイルが優先されます)").grid(row=0, column=1)
-    # Json設定ファイルのリストボックス
-    json_only_lb = GenericListBox(frame1, width=50, height=10)
-    json_only_lb.grid(row=1, column=1)
-    json_only_lb_reflesh(json_only_lb.lb)
-
-    # リスト更新ボタン
-    json_only_lb_reflesh_button = tk.Button(
-        frame1, text="リスト更新(Json設定ファイルはjson_onlyフォルダに入れてください)",
-        command=lambda: json_only_lb_reflesh(json_only_lb.lb))
-    json_only_lb_reflesh_button.grid(row=2, column=1)
-
-    # オーダー保存ボタン
-    json_only_order_save_button = tk.Button(
-        frame1, text="Json設定ファイルオーダーを保存",
-        command=lambda: json_only_order_save(get_list_from_listbox(json_only_lb.lb)))
-    json_only_order_save_button.grid(row=3, column=1)
-
-    # タイルセット出力ボタン
-    tileset_output_button = tk.Button(
-        frame1, text="タイルセットを出力",
-        command=lambda:
-        tileset_output(
-            get_list_from_listbox(tileset_lb.lb),
-            get_list_from_listbox(json_only_lb.lb)))
-    tileset_output_button.grid(row=4, column=1)
-
-    # メインウィンドウを表示し無限ループ
-    root.mainloop()
-
-# -----------------------------------------------------------------
-#
-# タイルセットの読み込み・書き出し処理
-#
-# -----------------------------------------------------------------
-
-
-def tileset_order_load():
-    order = []
-    try:
-        order_file = open(TILESET_ORDER_FILE, 'r')
-    except IOError:
-        print(TILESET_ORDER_FILE + " not found")
-    else:
-        order = json.load(order_file)
-    return order
-
-
-def tileset_order_save(order):
-    try:
-        order_file = open(TILESET_ORDER_FILE, 'w')
-    except IOError:
-        print(TILESET_ORDER_FILE + " cant open")
-    else:
-        order_file.write(json.dumps(order))
-
-
-def tilesets_load():
-    found = []
-    new_order = []
-    for filepath in walk_files_with('json', TILESET_DIR):
-        found.append(filepath)
-    order = tileset_order_load()
-    if order:
-        for a in order:
-            if a in found:
-                new_order.append(a)
-                found.remove(a)
-    for a in found:
-        new_order.append(a)
-    return new_order
-
-
-def tileset_lb_reflesh(tileset_lb):
-    tileset_lb.delete(0, tk.END)
-    new_lb = tilesets_load()
-    for val in new_lb:
-        tileset_lb.insert(tk.END, val)
-
-# -----------------------------------------------------------------
-#
-# Json設定ファイルの読み込み・書き出し処理
-#
-# -----------------------------------------------------------------
-
-
-def json_only_order_load():
-    order = []
-    try:
-        order_file = open(JSON_ONLY_ORDER_FILE, 'r')
-    except IOError:
-        print(JSON_ONLY_ORDER_FILE + " not found")
-    else:
-        order = json.load(order_file)
-    return order
-
-
-def json_only_order_save(order):
-    try:
-        order_file = open(JSON_ONLY_ORDER_FILE, 'w')
-    except IOError:
-        print(JSON_ONLY_ORDER_FILE + " cant open")
-    else:
-        order_file.write(json.dumps(order))
-
-
-def json_only_load():
-    found = []
-    new_order = []
-    for filepath in walk_files_with('json', JSON_ONLY_DIR):
-        found.append(filepath)
-    order = json_only_order_load()
-    for a in order:
-        if a in found:
+        if self.default_order:
+            for a in self.default_order:
+                if a in found:
+                    new_order.append(a)
+                    found.remove(a)
+        for a in found:
             new_order.append(a)
-            found.remove(a)
-    for a in found:
-        new_order.append(a)
-    return new_order
+        self.order = new_order
+
+        return self.order
+
+    def default_order_save(self, new_order=None, order_file=None):
+        if order_file:
+            self.default_order_file = order_file
+        if new_order:
+            self.default_order = new_order
+        try:
+            order_file = open(self.default_order_file, 'w')
+            order_file.write(json.dumps(self.default_order))
+        except IOError:
+            file_error(order_file)
+
+    def walk_files_with(self, extension, directory='.'):
+        for root, _, filenames in os.walk(directory):
+            for filename in filenames:
+                if filename.lower().endswith('.' + extension):
+                    yield os.path.normpath(os.path.join(root, filename))
 
 
-def json_only_lb_reflesh(json_only_lb):
-    json_only_lb.delete(0, tk.END)
-    new_lb = json_only_load()
-    for val in new_lb:
-        json_only_lb.insert(tk.END, val)
+class MainWindow(tk.Tk):
+    def walk_files_with(self, extension, directory='.'):
+        """Generate paths of all files that has specific extension in a directory. 
 
-# -----------------------------------------------------------------
-#
-# リストボックスに関する関数
-#
-# -----------------------------------------------------------------
+        Arguments:
+        extension -- [str] File extension without dot to find out
+        directory -- [str] Path to target directory
 
+        Return:
+        filepath -- [str] Path to file found
+        """
+        for root, _, filenames in os.walk(directory):
+            for filename in filenames:
+                if filename.lower().endswith('.' + extension):
+                    yield os.path.normpath(os.path.join(root, filename))
 
-def get_list_from_listbox(lb):
-    newlist = list(lb.get(0, tk.END))
-    return newlist
+    def lb_reflesh(self, lb, order):
+        lb.delete(0, tk.END)
+        for val in order.load():
+            lb.insert(tk.END, val)
+
+    def __init__(self, **key):
+        # メインウィンドウ作成
+        tk.Tk.__init__(self, **key)
+
+        # メインウィンドウのタイトルを変更
+        self.title("C:DDA Tile parser")
+
+        # メインウィンドウを640x480にする
+        self.geometry("800x400")
+
+        # フレーム
+        frame1 = ttk.Frame(self, padding=10)
+        frame1.grid()
+
+        tk.Label(frame1, text=u"タイルセットオーダー(下のタイルが優先されます)").grid(
+            row=0, column=0)
+        # タイルセットのリストボックス
+        tileset_lb = GenericListBox(frame1, width=50, height=10)
+        tileset_lb.grid(row=1, column=0)
+        self.tileset_order = FileOrder(TILESET_DIR, TILESET_ORDER_FILE)
+        self.tileset_order.load()
+        self.lb_reflesh(tileset_lb.lb, self.tileset_order)
+
+        # リスト更新ボタン
+        tilesets_reflesh_button = tk.Button(
+            frame1, text="リスト更新(タイルセットはtilesetsフォルダに入れてください)",
+            command=lambda: self.lb_reflesh(tileset_lb.lb, self.tileset_order))
+        tilesets_reflesh_button.grid(row=2, column=0)
+
+        # オーダー保存ボタン
+        tileset_order_save_button = tk.Button(
+            frame1, text="タイルセットオーダーを保存",
+            command=lambda: self.tileset_order.default_order_save(
+                tileset_lb.get_list()))
+        tileset_order_save_button.grid(row=3, column=0)
+
+        tk.Label(frame1, text=u"Json設定ファイル(下のファイルが優先されます)").grid(
+            row=0, column=1)
+        # Json設定ファイルのリストボックス
+        json_only_lb = GenericListBox(frame1, width=50, height=10)
+        json_only_lb.grid(row=1, column=1)
+        self.json_order = FileOrder(JSON_ONLY_DIR, JSON_ONLY_ORDER_FILE)
+        self.json_order.load()
+        self.lb_reflesh(json_only_lb.lb, self.json_order)
+
+        # リスト更新ボタン
+        json_only_lb_reflesh_button = tk.Button(
+            frame1, text="リスト更新(Json設定ファイルはjson_onlyフォルダに入れてください)",
+            command=lambda: self.lb_reflesh(json_only_lb.lb, self.json_order))
+        json_only_lb_reflesh_button.grid(row=2, column=1)
+
+        # オーダー保存ボタン
+        json_only_order_save_button = tk.Button(
+            frame1, text="Json設定ファイルオーダーを保存",
+            command=lambda: self.json_order.default_order_save(
+                json_only_lb.get_list()))
+        json_only_order_save_button.grid(row=3, column=1)
+
+        # タイルセット出力ボタン
+        tileset_output_button = tk.Button(
+            frame1, text="タイルセットを出力",
+            command=lambda:
+            tileset_output(
+                tileset_lb.get_list(),
+                json_only_lb.get_list()))
+        tileset_output_button.grid(row=4, column=1)
+
+        # メインウィンドウを表示し無限ループ
+        self.mainloop()
 
 # -----------------------------------------------------------------
 #
@@ -519,32 +498,10 @@ def tileset_output(tileset_order, json_only_order):
 
     success_output_tileset()
 
-# -----------------------------------------------------------------
-#
-# ファイル検索用関数
-#
-# -----------------------------------------------------------------
-
-
-def walk_files_with(extension, directory='.'):
-    """Generate paths of all files that has specific extension in a directory. 
-
-    Arguments:
-    extension -- [str] File extension without dot to find out
-    directory -- [str] Path to target directory
-
-    Return:
-    filepath -- [str] Path to file found
-    """
-    for root, dirnames, filenames in os.walk(directory):
-        for filename in filenames:
-            if filename.lower().endswith('.' + extension):
-                yield os.path.normpath(os.path.join(root, filename))
-
 
 # -----------------------------------------------------------------
 #
 # メインウィンドウ呼び出し
 #
 # -----------------------------------------------------------------
-main()
+MainWindow()

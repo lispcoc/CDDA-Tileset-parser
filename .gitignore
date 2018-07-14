@@ -2,4 +2,8 @@ dist/
 build/
 __pycache__/
 *.spec
+.vscode/
 CustomTile/
+*_order.json
+/tilesets/
+/json_only/
