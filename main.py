@@ -296,14 +296,16 @@ def offset_sn(list_or_int, offset):
     if type(list_or_int) is int:
         return list_or_int + offset
     if type(list_or_int) is list:
-        new_list = copy.deepcopy(list_or_int)
-        if type(new_list[0]) is dict:
+        if type(list_or_int[0]) is dict:
+            new_list = copy.deepcopy(list_or_int)
             for m in new_list:
                 m["sprite"] += offset
+            return new_list
         else:
-            for n in new_list:
-                n += offset
-        return new_list
+            new_list = []
+            for n in list_or_int:
+                new_list.append(n + offset)
+            return new_list
 
 # -----------------------------------------------------------------
 #
@@ -337,8 +339,6 @@ def tileset_output(tileset_order, json_only_order):
     # タイルセットのjsonをロードする
     tile_num = 0
     new_tile_config = {}
-    new_ascii_tile = None
-    new_ascii_file = None
 
     sprite_offset = 0
     for filename in tileset_order:
@@ -367,12 +367,6 @@ def tileset_output(tileset_order, json_only_order):
                     json_error(filename)
                     exit_output_tileset()
                     return
-
-                if "ascii" in tile_setting:
-                    # asciiタイルは特別扱いらしいので最後に追加する
-                    new_ascii_tile = copy.deepcopy(tile_setting)
-                    new_ascii_file = src_dir + tile_setting["file"]
-                    continue
 
                 status = copy_wrapper(
                     src_dir + tile_setting["file"], dest_dir + tile_setting["file"])
@@ -474,15 +468,6 @@ def tileset_output(tileset_order, json_only_order):
 
                     if new_data:
                         tile_setting["tiles"].append(new_data)
-
-    # asciiファイルの適用
-    if new_ascii_tile != None:
-        new_tile_config["tiles-new"].append(new_ascii_tile)
-        status = copy_wrapper(
-            new_ascii_file, OUTPUT_DIR + new_ascii_tile["file"])
-        if not status:
-            exit_output_tileset()
-            return
 
     # すべてのタイルセットに問題がなければtileset_configを出力
     new_tile_config_file = open(OUTPUT_DIR + OUTPUT_CONFIG_JSON, 'w')
