@@ -31,6 +31,22 @@ TILESET_TXT_VIEW = "CustomTileset"
 TILESET_TXT_JSON = OUTPUT_CONFIG_JSON
 TILESET_TXT_TILE = "tiles.png"  # 現在はもう使われてません
 
+
+# -----------------------------------------------------------------
+#
+# 標準出力リダイレクトボックスクラス
+#
+# -----------------------------------------------------------------
+
+
+class StdoutRedirector(object):
+    def __init__(self, text_widget):
+        self.text_space = text_widget
+
+    def write(self, string):
+        self.text_space.insert('end', string)
+        self.text_space.see('end')
+
 # -----------------------------------------------------------------
 #
 # 汎用リストボックスクラス
@@ -154,15 +170,6 @@ class FileOrder():
 
 class MainWindow(tk.Tk):
     def walk_files_with(self, extension, directory='.'):
-        """Generate paths of all files that has specific extension in a directory. 
-
-        Arguments:
-        extension -- [str] File extension without dot to find out
-        directory -- [str] Path to target directory
-
-        Return:
-        filepath -- [str] Path to file found
-        """
         for root, _, filenames in os.walk(directory):
             for filename in filenames:
                 if filename.lower().endswith('.' + extension):
@@ -181,7 +188,7 @@ class MainWindow(tk.Tk):
         self.title("C:DDA Tile parser")
 
         # メインウィンドウを640x480にする
-        self.geometry("800x400")
+        self.geometry("800x480")
 
         # フレーム
         frame1 = ttk.Frame(self, padding=10)
@@ -240,6 +247,12 @@ class MainWindow(tk.Tk):
                 json_only_lb.get_list()))
         tileset_output_button.grid(row=4, column=1)
 
+        # 標準出力リダイレクトボックス
+        self.text_box = tk.Text(frame1, wrap='word', height=3, width=50)
+        self.text_box.grid(column=0, row=5, columnspan=2,
+                           sticky='NSWE')
+        sys.stdout = StdoutRedirector(self.text_box)
+        print("*** start debug message ***")
         # メインウィンドウを表示し無限ループ
         self.mainloop()
 
@@ -254,16 +267,25 @@ def ask_continue(title, msg):
     return tkmsg.askokcancel(title, msg)
 
 
-def json_error(filename):
+def json_error(filename, e = ""):
     tkmsg.showerror('エラー',
                     '解釈できないJsonファイルです！\n' +
                     filename)
+    print(e)
 
 
-def file_error(filename):
+def file_error(filename, e = ""):
     tkmsg.showerror('エラー',
                     'ファイルを開けません！\n' +
                     filename)
+    print(e)
+
+
+def type_error(filename, e = ""):
+    tkmsg.showerror('エラー',
+                    'データ型の取り扱いが適切ではありません！\n' +
+                    filename)
+    print(e)
 
 
 def os_error(e):
@@ -405,21 +427,21 @@ def tileset_output(tileset_order, json_only_order):
                 new_tile_setting["file"] = str(
                     tile_num) + "/" + new_tile_setting["file"]
                 new_tile_config["tiles-new"].append(new_tile_setting)
-                print(new_tile_setting["file"])
-                print(num_spr)
+                print("file: " + src_dir + tile_setting["file"])
+                print("sprites: " + str(num_spr))
 
             sprite_offset += num_spr
-            print(sprite_offset)
-        except IOError:
-            file_error(filename)
+            print("current offset: " + str(sprite_offset))
+        except IOError as e:
+            file_error(filename, e)
             exit_output_tileset()
             return
-        except json.JSONDecodeError:
-            json_error(filename)
+        except json.JSONDecodeError as e:
+            json_error(filename, e)
             exit_output_tileset()
             return
-        except TypeError:
-            json_error(filename)
+        except TypeError as e:
+            type_error(filename, e)
             exit_output_tileset()
             return
 
@@ -429,11 +451,11 @@ def tileset_output(tileset_order, json_only_order):
             file = open(filename, 'r')
             json_data = json.load(file)
         except IOError:
-            file_error(filename)
+            file_error(filename, e)
             exit_output_tileset()
             return
         except json.JSONDecodeError:
-            json_error(filename)
+            json_error(filename, e)
             exit_output_tileset()
             return
         for json_only in json_data:
